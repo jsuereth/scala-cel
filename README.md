@@ -8,4 +8,4 @@ TBD
 
 ## Building
 
-The build requires (SBT)[http://github.com/harrah/xsbt] version 0.10 or higher.
+The build requires [SBT](http://github.com/harrah/xsbt) version 0.10 or higher.
