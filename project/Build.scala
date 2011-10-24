@@ -23,12 +23,13 @@ object CommunityExtensionsBuild extends Build {
   )
   lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
   lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
-  lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
+  // Specs is going to need a scalaz hackery fix to compile here.
+  //lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
 
   // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
   // sequence.
-  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, specs2)
+  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck)
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
   def hashInfo(d: MyDependencyInfo) = d.organization + ":" + d.name
