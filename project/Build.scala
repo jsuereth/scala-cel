@@ -51,7 +51,7 @@ trait DependencyAnalysis {
 object CommunityExtensionsBuild extends Build with DependencyAnalysis {
   val celVersion = "cel-1.0-SNAPSHOT"
   val celOrganization = "org.scala-lang.cel"
-  val celScalaVersion = "2.10-SNAPSHOT"
+  val celScalaVersion = "2.10.0-SNAPSHOT"
   
   lazy val celFixed = AttributeKey[Boolean]("scala-cel-references-fixed")
   lazy val root = Project("root", file(".")) dependsOn(projectDeps: _*) settings(
@@ -64,10 +64,12 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
   // Specs is going to need a scalaz hackery fix to compile here.
   //lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
+  // Scalaz for specs2
+  lazy val scalaz = uri("git://github.com/scalaz/scalaz.git#6.0.3")
 
   // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
   // sequence.
-  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck)
+  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz)
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
   /** Transforms a set of settings so that the CEL build will succeed. */
