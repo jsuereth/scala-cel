@@ -21,7 +21,7 @@ trait DependencyAnalysis {
   def hashInfo(d: MyDependencyInfo) = hashSynonym(d.organization + ":" + d.name)
   def hashModule(o: ModuleID) = hashSynonym(o.organization + ":" + o.name)
   def hashSynonym(x: String) = x match {
-   case "org.specs2:specs2-scalaz-core" => "org.scalaz:scalaz"
+   //case "org.specs2:specs2-scalaz-core" => "org.scalaz:scalaz"
    case x => x
   }
 
@@ -47,7 +47,7 @@ trait DependencyAnalysis {
     (results map { value =>
       val changes = for { dep <- value.dependencies
         proj <- lookUp.get(hashModule(dep))
-      } yield (dep.copy(organization=celOrganization, revision=celVersion, name=proj.name), dep)
+      } yield (dep.copy(organization=celOrganization, revision=celVersion), dep)
       // TODO - If we change the groupIds, we need to change the project moduleID group ids... maybe...
       MyDependencyActions(value, changes map (_._1), changes map (_._2))
     } 
@@ -68,7 +68,7 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
   lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
   lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
   // Scalaz is needed for specs.
-  lazy val scalaz = ProjectRef(uri("git://github.com/scalaz/scalaz.git#6.0.3"), "scalaz-core")
+  lazy val scalaz = uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x")
   lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
 
@@ -92,7 +92,8 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
         if proj.info.project == ref
         dep <- proj.addProjectDependency
       } yield dep)
-      old filterNot toRemove ++ toAdd
+      println("Project ["+ref+"] toAdd = " + toAdd.mkString("\n\t", "\n\t", "\n"))
+      (old filterNot toRemove) ++ toAdd
       // TODO - Add new dependencies!
     } else s
     // Now fix dependencies
