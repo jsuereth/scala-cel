@@ -3,6 +3,21 @@ import Keys._
 import Load.BuildStructure
 
 
+trait CelProjects {
+
+  lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
+  lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
+  // Scalaz is needed for specs.
+  lazy val scalaz = uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x")
+  lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
+  lazy val antixml = uri("git://github.com/djspiewak/anti-xml.git")
+  //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
+
+  // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
+  // sequence.
+  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz, specs2, antixml)
+}
+
 case class MyDependencyInfo(project: ProjectRef,
                             name: String, 
                             organization: String, 
@@ -81,7 +96,7 @@ trait DependencyAnalysis {
   }
 }
                                
-object CommunityExtensionsBuild extends Build with DependencyAnalysis {
+object CommunityExtensionsBuild extends Build with DependencyAnalysis with CelProjects {
   //val info = CelInfo("cel-1.0-SNAPSHOT", "org.scala-lang.cel", "2.9.1")
   lazy val celFixed = AttributeKey[Boolean]("scala-cel-references-fixed")
   lazy val root = Project("root", file(".")) dependsOn(projectDeps: _*) settings(
@@ -90,17 +105,7 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
     onLoad in Global <<= (onLoad in Global) ?? idFun[State],
     onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _))
   )
-  lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
-  lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
-  // Scalaz is needed for specs.
-  lazy val scalaz = uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x")
-  lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
-  //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
-
-
-  // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
-  // sequence.
-  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz, specs2)
+  
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
   def celTest = Command.command("cel-test") { (state: State) =>
