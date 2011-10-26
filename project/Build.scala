@@ -11,12 +11,20 @@ case class MyDependencyInfo(project: ProjectRef,
                             dependencies: Seq[ModuleID] = Seq())
 
 case class MyDependencyActions(info: MyDependencyInfo,
-                               addProjectDependency: Seq[ProjectRef] = Nil,
+                               addProjectDependency: Seq[ModuleID] = Nil,
                                removeLibraryDependency: Seq[ModuleID] = Nil)
                                
 trait DependencyAnalysis {
-  def hashInfo(d: MyDependencyInfo) = d.organization + ":" + d.name
-  def hashModule(o: ModuleID) = o.organization + ":" + o.name
+  val celVersion = "cel-1.0-SNAPSHOT"
+  val celOrganization = "org.scala-lang.cel"
+  val celScalaVersion = "2.9.1"
+  def hashInfo(d: MyDependencyInfo) = hashSynonym(d.organization + ":" + d.name)
+  def hashModule(o: ModuleID) = hashSynonym(o.organization + ":" + o.name)
+  def hashSynonym(x: String) = x match {
+   case "org.specs2:specs2-scalaz-core" => "org.scalaz:scalaz"
+   case x => x
+  }
+
   /** Pulls the name/organization/version for each project in the CEL build */
   def getProjectInfos(extracted: Extracted, refs: Iterable[ProjectRef]) =
     (Vector[MyDependencyInfo]() /: refs) { (dependencies, ref) =>
@@ -34,11 +42,12 @@ trait DependencyAnalysis {
     val lookUp = (Map[String, MyDependencyInfo]() /: results) { (m, value) =>
        m + (hashInfo(value) -> value)
     }
+    
     println("---- Dependencies = " + lookUp.mkString("\n\t", "\n\t", "\n"))
     (results map { value =>
       val changes = for { dep <- value.dependencies
         proj <- lookUp.get(hashModule(dep))
-      } yield (proj.project, dep)
+      } yield (dep.copy(organization=celOrganization, revision=celVersion, name=proj.name), dep)
       // TODO - If we change the groupIds, we need to change the project moduleID group ids... maybe...
       MyDependencyActions(value, changes map (_._1), changes map (_._2))
     } 
@@ -49,27 +58,24 @@ trait DependencyAnalysis {
 }
                                
 object CommunityExtensionsBuild extends Build with DependencyAnalysis {
-  val celVersion = "cel-1.0-SNAPSHOT"
-  val celOrganization = "org.scala-lang.cel"
-  val celScalaVersion = "2.10.0-SNAPSHOT"
   
   lazy val celFixed = AttributeKey[Boolean]("scala-cel-references-fixed")
   lazy val root = Project("root", file(".")) dependsOn(projectDeps: _*) settings(
-    commands += magikCommand("cel-setup"),
+    commands += celSetup,
     onLoad in Global <<= (onLoad in Global) ?? idFun[State],
     onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _))
   )
   lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
   lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
-  // Specs is going to need a scalaz hackery fix to compile here.
-  //lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
+  // Scalaz is needed for specs.
+  lazy val scalaz = ProjectRef(uri("git://github.com/scalaz/scalaz.git#6.0.3"), "scalaz-core")
+  lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
-  // Scalaz for specs2
-  lazy val scalaz = uri("git://github.com/scalaz/scalaz.git#6.0.3")
+
 
   // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
   // sequence.
-  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz)
+  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz, specs2)
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
   /** Transforms a set of settings so that the CEL build will succeed. */
@@ -81,7 +87,12 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
         if proj.info.project == ref
         dep <- proj.removeLibraryDependency
       } yield dep).toSet
-      old filterNot toRemove
+      val toAdd = (for {
+        proj <- actions
+        if proj.info.project == ref
+        dep <- proj.addProjectDependency
+      } yield dep)
+      old filterNot toRemove ++ toAdd
       // TODO - Add new dependencies!
     } else s
     // Now fix dependencies
@@ -99,7 +110,7 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
   
   // Define the command.  This takes the existing settings (including any session settings)
   // and applies 'f' to each Setting[_]
-  def magikCommand(name: String) = Command.command(name) { (state: State) =>
+  def celSetup = Command.command("cel-setup") { (state: State) =>
     if(state.get(celFixed) getOrElse false) state
     else {
     // TODO - Don't run if already run.
@@ -111,7 +122,8 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis {
       } toSet)
       val projectInfos = getProjectInfos(extracted, refs)
       val projectActions = analyseDependencies(projectInfos)
-      
+      println("--== Project actions ==--")
+      projectActions foreach println
       val transformedSettings = fixCellProjectSettings(projectActions)(session.mergeSettings)
       // Now we need to rip into structure and add references to appropriate projects.
       import Load._      
