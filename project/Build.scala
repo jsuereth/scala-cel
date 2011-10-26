@@ -115,7 +115,10 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis with CelPr
     for(ref <- projectRefs; task <- magikTasks) {
       // TODO - Better print statements
       println("Executing " + task.key + " in " + ref)
-      Project.evaluateTask(task in ref, state)
+      Project.evaluateTask(task in ref, state) map {
+        case Value(v) => ()
+        case Inc(inc) => throw inc
+      } getOrElse error("No result from " + (task in ref))
     }
     state
   }
