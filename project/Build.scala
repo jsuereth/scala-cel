@@ -5,17 +5,17 @@ import Load.BuildStructure
 
 trait CelProjects {
 
-  lazy val scalaArm = uri("git://github.com/jsuereth/scala-arm.git")
-  lazy val scalaCheck = uri("git://github.com/rickynils/scalacheck.git")
+  lazy val scalaArm = RootProject(uri("git://github.com/jsuereth/scala-arm.git"))
+  lazy val scalaCheck = RootProject(uri("git://github.com/rickynils/scalacheck.git"))
   // Scalaz is needed for specs.
-  lazy val scalaz = uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x")
+  lazy val specsscalaz = RootProject(uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x"))
   lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
   lazy val antixml = uri("git://github.com/djspiewak/anti-xml.git")
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
 
   // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
   // sequence.
-  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, scalaz, specs2, antixml)
+  lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, specsscalaz, specs2, antixml)
 }
 
 case class MyDependencyInfo(project: ProjectRef,
@@ -103,9 +103,12 @@ object CommunityExtensionsBuild extends Build with DependencyAnalysis with CelPr
     commands += celSetup,
     commands += celTest,
     onLoad in Global <<= (onLoad in Global) ?? idFun[State],
-    onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _))
+    onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _)),
+    unmanagedSourceDirectories in Compile <<= (projectRefs map (unmanagedSourceDirectories in Compile in _)).join.apply(_ flatMap identity),
+    libraryDependencies <<= (projectRefs map (libraryDependencies in _)).join.apply(_ flatMap identity),
+    compile := inc.Analysis.Empty,    
+    classpathOptions in Compile := ClasspathOptions.manual
   )
-  
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
   def celTest = Command.command("cel-test") { (state: State) =>
