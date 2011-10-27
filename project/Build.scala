@@ -9,13 +9,17 @@ trait CelProjects {
   lazy val scalaCheck = RootProject(uri("git://github.com/rickynils/scalacheck.git"))
   // Scalaz is needed for specs.
   lazy val specsscalaz = RootProject(uri("git://github.com/etorreborre/scalaz.git#scala-2.9.x"))
-  lazy val specs2 = uri("git://github.com/etorreborre/specs2.git")
-  lazy val antixml = uri("git://github.com/djspiewak/anti-xml.git")
+  lazy val specs2 = RootProject(uri("git://github.com/etorreborre/specs2.git"))
+  lazy val antixml = RootProject(uri("git://github.com/djspiewak/anti-xml.git"))
+
   //lazy val scalaIo = uri("git://github.com/scala-incubator/scala-io.git")
 
   // Scala-cel project refs in dependency order.   Note:  Builds will be performed in the order of this
   // sequence.
   lazy val projectRefs: Seq[ProjectReference] = Seq(scalaArm, scalaCheck, specsscalaz, specs2, antixml)
+
+  lazy val libProjects = Seq(scalaArm, antixml)
+  lazy val testProjects = Seq(scalaCheck, specsscalaz, specs2)
 }
 
 case class MyDependencyInfo(project: ProjectRef,
@@ -97,17 +101,24 @@ trait DependencyAnalysis {
 }
                                
 object CommunityExtensionsBuild extends Build with DependencyAnalysis with CelProjects {
+
+  def makeDocSettings(scope: Configuration, refs: Seq[ProjectReference]): Seq[Setting[_]] = Seq(
+    unmanagedSourceDirectories in scope <<= (refs map (unmanagedSourceDirectories in Compile in _)).join.apply(_ flatMap identity),
+    compile in scope := inc.Analysis.Empty,
+    classpathOptions in scope := ClasspathOptions.manual
+  )
   //val info = CelInfo("cel-1.0-SNAPSHOT", "org.scala-lang.cel", "2.9.1")
   lazy val celFixed = AttributeKey[Boolean]("scala-cel-references-fixed")
   lazy val root = Project("root", file(".")) dependsOn(projectDeps: _*) settings(
-    commands += celSetup,
-    commands += celTest,
-    onLoad in Global <<= (onLoad in Global) ?? idFun[State],
-    onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _)),
-    unmanagedSourceDirectories in Compile <<= (projectRefs map (unmanagedSourceDirectories in Compile in _)).join.apply(_ flatMap identity),
-    libraryDependencies <<= (projectRefs map (libraryDependencies in _)).join.apply(_ flatMap identity),
-    compile := inc.Analysis.Empty,    
-    classpathOptions in Compile := ClasspathOptions.manual
+    (Seq(
+      commands += celSetup,
+      commands += celTest,
+      onLoad in Global <<= (onLoad in Global) ?? idFun[State],
+      onLoad in Global <<= (onLoad in Global) apply ( _ andThen ("cel-setup" :: _)),
+      libraryDependencies <<= (projectRefs map (libraryDependencies in _)).join.apply(_ flatMap identity)) ++
+    makeDocSettings(Compile, libProjects) ++
+    makeDocSettings(Test, testProjects)
+    ):_*
   )
   lazy val projectDeps: Seq[ClasspathDependency] = projectRefs map (new ClasspathDependency(_, None))
 
