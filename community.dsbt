@@ -32,10 +32,6 @@
     system: "sbt",
     uri:    "git://github.com/jsuereth/sperformance.git#origin/community"
   },{
-    name:   "scalariform",
-    system: "sbt",
-    uri:    "git://github.com/mdr/scalariform.git#master"
-  },{
     name:   "scala-graph",
     system: "sbt",
     uri:    "http://subversion.assembla.com/svn/scala-graph/trunk"
