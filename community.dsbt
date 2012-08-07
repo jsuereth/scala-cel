@@ -32,6 +32,10 @@
     system: "sbt",
     uri:    "git://github.com/jsuereth/sperformance.git#origin/community"
   },{
+    name:   "scalatest",
+    system: "sbt",
+    uri:    "https://scalatest.googlecode.com/svn/branches/cmty2.10"
+  },{
     name:   "scala-graph",
     system: "sbt",
     uri:    "http://subversion.assembla.com/svn/scala-graph/trunk"
