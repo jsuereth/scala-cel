@@ -22,7 +22,7 @@
   },{
     name:"akka",
     system:"sbt",
-    uri:"git://github.com/akka/akka.git#master"
+    uri:"git://github.com/akka/akka.git#wip-210-SNAPSHOT-√"
   },{
     name:   "scala-arm",
     system: "sbt",
@@ -35,9 +35,5 @@
     name:   "scalatest",
     system: "sbt",
     uri:    "https://scalatest.googlecode.com/svn/branches/cmty2.10"
-  },{
-    name:   "scala-graph",
-    system: "sbt",
-    uri:    "http://subversion.assembla.com/svn/scala-graph/trunk"
   }
 ]}
