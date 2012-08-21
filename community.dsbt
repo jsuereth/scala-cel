@@ -22,7 +22,10 @@
   },{
     name:"akka",
     system:"sbt",
-    uri:"git://github.com/akka/akka.git#wip-210-SNAPSHOT-√"
+    uri:"git://github.com/akka/akka.git#wip-210-SNAPSHOT-RK"
+    extra: {
+      projects: ['akka-actors']
+    }
   },{
     name:   "scala-arm",
     system: "sbt",
