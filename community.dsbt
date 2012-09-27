@@ -2,7 +2,7 @@
   {
     name:  "scala",
     system: "scala",
-    uri:    "git://github.com/scala/scala.git#2.10.x"
+    uri:    "git://github.com/scala/scala.git#2.10.0-wip"
   }, {
     name:   "scalacheck",
     system: "sbt",
