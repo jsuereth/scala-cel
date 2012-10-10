@@ -24,7 +24,7 @@
     system:"sbt",
     uri:"git://github.com/akka/akka.git#wip-210-SNAPSHOT-RK"
     extra: {
-      projects: ['akka-actors']
+      projects: ['akka-actor']
     }
   },{
     name:   "scala-arm",
