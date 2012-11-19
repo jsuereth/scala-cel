@@ -22,7 +22,7 @@
   },{
     name:"akka",
     system:"sbt",
-    uri:"git://github.com/akka/akka.git#wip-210-SNAPSHOT-RK"
+    uri:"git://github.com/akka/akka.git#master"
     extra: {
       projects: ['akka-actor']
     }
